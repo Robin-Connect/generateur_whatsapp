@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Messages WhatsApp</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#f0ede8;color:#1a1a1a;min-height:100vh;padding:1.5rem 1rem}
+.app{max-width:720px;margin:0 auto}
+h1{font-size:20px;font-weight:600;margin-bottom:4px}
+.subtitle{font-size:13px;color:#888;margin-bottom:1.5rem}
+
+/* NAV TABS */
+.tabs{display:flex;gap:2px;background:#e8e8e4;border-radius:10px;padding:3px;margin-bottom:1.5rem}
+.tab{flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;background:transparent;color:#888;transition:all 0.15s;text-align:center}
+.tab.active{background:#fff;color:#1a1a1a;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* FORM FIELDS */
+.fields-bar{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.fields-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#aaa;margin-bottom:10px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.field-row.three{grid-template-columns:1fr 1fr 1fr}
+.field-row.single{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11px;color:#aaa;font-weight:500}
+.field input,.field select{padding:7px 10px;border:1px solid #e8e8e8;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:#1a1a1a;background:#fafaf8;outline:none;transition:border-color 0.15s}
+.field input:focus,.field select:focus{border-color:#1a1a1a;background:#fff}
+
+/* MESSAGE CARDS */
+.msg-section{margin-bottom:8px}
+.msg-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#aaa;margin:16px 0 8px}
+.msg-card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;margin-bottom:10px;overflow:hidden}
+.msg-header{padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.msg-header:hover{background:#fafaf8}
+.msg-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.icon-client{background:#E6F1FB}
+.icon-artisan{background:#EAF3DE}
+.icon-fixed{background:#EEEDFE}
+.msg-title{font-size:13px;font-weight:500;color:#1a1a1a;flex:1}
+.msg-badge{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding:2px 8px;border-radius:20px}
+.badge-client{background:#E6F1FB;color:#0C447C}
+.badge-artisan{background:#EAF3DE;color:#27500A}
+.badge-fixed{background:#EEEDFE;color:#3C3489}
+.chevron{width:16px;height:16px;color:#aaa;transition:transform 0.2s;flex-shrink:0}
+.chevron.open{transform:rotate(90deg)}
+.msg-body{display:none;border-top:1px solid #f0f0ec;padding:14px 16px}
+.msg-body.open{display:block}
+
+/* TEXTAREA */
+.msg-textarea{width:100%;min-height:120px;padding:12px 14px;border:1px solid #e8e8e8;border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:#1a1a1a;background:#fafaf8;resize:vertical;outline:none;line-height:1.6;transition:border-color 0.15s}
+.msg-textarea:focus{border-color:#1a1a1a;background:#fff}
+.msg-note{font-size:12px;color:#888;margin-top:6px;font-style:italic;line-height:1.5}
+
+/* ACTIONS */
+.msg-actions{display:flex;gap:8px;margin-top:10px}
+.btn{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px;border:none}
+.btn-copy{background:#f5f5f3;color:#1a1a1a;border:1px solid #e8e8e4}
+.btn-copy:hover{background:#e8e8e4}
+.btn-copy.done{background:#EAF3DE;color:#27500A;border-color:#97C459}
+.btn-wa{background:#25D366;color:#fff}
+.btn-wa:hover{background:#1ebe5d}
+.btn-refresh{background:transparent;color:#aaa;border:1px solid #e8e8e4;padding:9px 12px}
+.btn-refresh:hover{color:#1a1a1a;border-color:#bbb}
+
+/* PHONE FIELD */
+.phone-display{font-size:12px;color:#888;margin-top:4px}
+
+/* COPY TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;opacity:0;transition:opacity 0.2s;pointer-events:none;z-index:999}
+.toast.show{opacity:1}
+
+@media(max-width:520px){.field-row,.field-row.three{grid-template-columns:1fr}.msg-actions{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Messages WhatsApp</h1>
+  <p class="subtitle">Génère, édite et envoie — client ou artisan</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('client')">Client</button>
+    <button class="tab" onclick="switchTab('artisan')">Artisan</button>
+    <button class="tab" onclick="switchTab('fixe')">Messages fixes</button>
+  </div>
+
+  <!-- ══ ONGLET CLIENT ═════════════════════════════════════════════════════ -->
+  <div id="tab-client" class="tab-panel active">
+
+    <div class="fields-bar">
+      <div class="fields-title">Données client</div>
+      <div class="field-row three">
+        <div class="field"><label>Prénom client</label><input id="c_prenom" type="text" placeholder="Marie" oninput="refreshAll()"></div>
+        <div class="field"><label>Numéro WhatsApp</label><input id="c_tel" type="text" placeholder="06 12 34 56 78" oninput="refreshAll()"></div>
+        <div class="field"><label>ID mission</label><input id="c_mission" type="text" placeholder="M-0007" oninput="refreshAll()"></div>
+      </div>
+      <div class="field-row three">
+        <div class="field"><label>Date RDV</label><input id="c_date" type="text" placeholder="jeudi 24 avril" oninput="refreshAll()"></div>
+        <div class="field"><label>Heure RDV</label><input id="c_heure" type="text" placeholder="14h00" oninput="refreshAll()"></div>
+        <div class="field"><label>Nom artisan</label><input id="c_artisan" type="text" placeholder="Paul" oninput="refreshAll()"></div>
+      </div>
+      <div class="field-row three">
+        <div class="field"><label>Type intervention</label><input id="c_type" type="text" placeholder="fuite sous évier" oninput="refreshAll()"></div>
+        <div class="field"><label>Montant facturé (€)</label><input id="c_montant" type="text" placeholder="220" oninput="refreshAll()"></div>
+        <div class="field"><label>Lien avis Google</label><input id="c_avis" type="text" placeholder="https://g.page/r/..." oninput="refreshAll()"></div>
+      </div>
+    </div>
+
+    <!-- Confirmation RDV -->
+    <div class="msg-section-label">Messages mission</div>
+
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-client">📅</div>
+        <span class="msg-title">Confirmation de RDV</span>
+        <span class="msg-badge badge-client">Client</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_c_rdv" oninput=""></textarea>
+        <div class="msg-note">Envoyé dès que le créneau est confirmé avec l'artisan. Ne pas envoyer avant d'avoir la confirmation artisan.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_c_rdv', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('c_tel','msg_c_rdv')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Suivi + avis -->
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-client">⭐</div>
+        <span class="msg-title">Suivi post-intervention + demande d'avis</span>
+        <span class="msg-badge badge-client">Client</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_c_suivi" oninput=""></textarea>
+        <div class="msg-note">À envoyer le lendemain ou le jour même après l'intervention. Sert à vérifier le montant facturé ET à collecter un avis.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_c_suivi', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('c_tel','msg_c_suivi')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rappel RDV -->
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-client">🔔</div>
+        <span class="msg-title">Rappel RDV (J-1)</span>
+        <span class="msg-badge badge-client">Client</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_c_rappel" oninput=""></textarea>
+        <div class="msg-note">Optionnel — utile pour les créneaux posés plus de 48h à l'avance.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_c_rappel', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('c_tel','msg_c_rappel')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Retard artisan -->
+    <div class="msg-section-label">Gestion imprévus</div>
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-client">⏱️</div>
+        <span class="msg-title">Annonce retard artisan</span>
+        <span class="msg-badge badge-client">Client</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <div class="field-row" style="margin-bottom:10px">
+          <div class="field"><label>Nouvelle heure estimée</label><input id="c_retard_heure" type="text" placeholder="15h30" oninput="refreshAll()"></div>
+        </div>
+        <textarea class="msg-textarea" id="msg_c_retard" oninput=""></textarea>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_c_retard', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('c_tel','msg_c_retard')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-client">❌</div>
+        <span class="msg-title">Annulation — proposition de reprogrammation</span>
+        <span class="msg-badge badge-client">Client</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_c_annul" oninput=""></textarea>
+        <div class="msg-note">À envoyer immédiatement quand l'artisan signale un empêchement. Proposer une alternative dans le même message.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_c_annul', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('c_tel','msg_c_annul')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ONGLET ARTISAN ════════════════════════════════════════════════════ -->
+  <div id="tab-artisan" class="tab-panel">
+
+    <div class="fields-bar">
+      <div class="fields-title">Données artisan & mission</div>
+      <div class="field-row three">
+        <div class="field"><label>Prénom artisan</label><input id="a_prenom" type="text" placeholder="Paul" oninput="refreshAll()"></div>
+        <div class="field"><label>Numéro WhatsApp</label><input id="a_tel" type="text" placeholder="06 XX XX XX XX" oninput="refreshAll()"></div>
+        <div class="field"><label>ID mission</label><input id="a_mission" type="text" placeholder="M-0007" oninput="refreshAll()"></div>
+      </div>
+      <div class="field-row three">
+        <div class="field"><label>Date intervention</label><input id="a_date" type="text" placeholder="jeudi 24 avril" oninput="refreshAll()"></div>
+        <div class="field"><label>Heure</label><input id="a_heure" type="text" placeholder="14h00" oninput="refreshAll()"></div>
+        <div class="field"><label>Durée estimée</label><input id="a_duree" type="text" placeholder="1h" oninput="refreshAll()"></div>
+      </div>
+      <div class="field-row three">
+        <div class="field"><label>Nom client</label><input id="a_client" type="text" placeholder="Mme Dupont" oninput="refreshAll()"></div>
+        <div class="field"><label>Tél client</label><input id="a_client_tel" type="text" placeholder="06 XX XX XX XX" oninput="refreshAll()"></div>
+        <div class="field"><label>Adresse</label><input id="a_adresse" type="text" placeholder="12 rue de la Paix 75001" oninput="refreshAll()"></div>
+      </div>
+      <div class="field-row three">
+        <div class="field"><label>Type intervention</label><input id="a_type" type="text" placeholder="Débouchage évier" oninput="refreshAll()"></div>
+        <div class="field"><label>Tarif estimé (€)</label><input id="a_tarif" type="text" placeholder="180" oninput="refreshAll()"></div>
+        <div class="field"><label>Urgence</label>
+          <select id="a_urgence" onchange="refreshAll()">
+            <option value="">Standard</option>
+            <option value="⚠️ URGENT — ">⚠️ Urgent</option>
+            <option value="🚨 TRÈS URGENT — ">🚨 Très urgent</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="msg-section-label">Mission</div>
+
+    <!-- Nouvelle mission -->
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-artisan">🔧</div>
+        <span class="msg-title">Nouvelle mission — petite intervention</span>
+        <span class="msg-badge badge-artisan">Artisan</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_a_mission" oninput=""></textarea>
+        <div class="msg-note">Pour les interventions standardisées où le tarif a déjà été annoncé au client. L'artisan confirme par O/N.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_a_mission', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('a_tel','msg_a_mission')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validation devis avant envoi client -->
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-artisan">📋</div>
+        <span class="msg-title">Validation devis avant envoi client</span>
+        <span class="msg-badge badge-artisan">Artisan</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <div class="field-row" style="margin-bottom:10px">
+          <div class="field"><label>Fourchette proposée (€)</label><input id="a_fourchette" type="text" placeholder="200 – 280" oninput="refreshAll()"></div>
+        </div>
+        <textarea class="msg-textarea" id="msg_a_devis_valid" oninput=""></textarea>
+        <div class="msg-note">Quand tu as qualifié une demande mais que tu veux que l'artisan valide la fourchette avant que tu la communiques au client.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_a_devis_valid', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('a_tel','msg_a_devis_valid')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RDV devis sur site -->
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-artisan">📐</div>
+        <span class="msg-title">RDV devis sur site (intervention complexe)</span>
+        <span class="msg-badge badge-artisan">Artisan</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_a_devis_site" oninput=""></textarea>
+        <div class="msg-note">Pour les demandes trop complexes pour estimer par téléphone. La visite est gratuite et sans engagement côté client.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_a_devis_site', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('a_tel','msg_a_devis_site')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Relance confirmation -->
+    <div class="msg-section-label">Suivi et relances</div>
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-artisan">🔁</div>
+        <span class="msg-title">Relance — pas de confirmation après 2h</span>
+        <span class="msg-badge badge-artisan">Artisan</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_a_relance" oninput=""></textarea>
+        <div class="msg-note">Si pas de réponse dans les 2h après l'envoi de mission. Ton client attend — ne pas attendre plus longtemps avant d'activer un plan B.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_a_relance', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('a_tel','msg_a_relance')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Demande prix réel -->
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-artisan">💶</div>
+        <span class="msg-title">Demande du prix réel post-intervention</span>
+        <span class="msg-badge badge-artisan">Artisan</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_a_prix" oninput=""></textarea>
+        <div class="msg-note">À envoyer dans les heures qui suivent la fin de l'intervention. Nécessaire pour le suivi client, la facturation et le calcul de commission.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_a_prix', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('a_tel','msg_a_prix')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Récap mensuel -->
+    <div class="msg-section-label">Mensuel</div>
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-artisan">📊</div>
+        <span class="msg-title">Récap mensuel — avant facturation</span>
+        <span class="msg-badge badge-artisan">Artisan</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <div class="field-row three" style="margin-bottom:10px">
+          <div class="field"><label>Mois concerné</label><input id="a_mois" type="text" placeholder="avril 2026" oninput="refreshAll()"></div>
+          <div class="field"><label>Nb missions total</label><input id="a_nb_missions" type="text" placeholder="8" oninput="refreshAll()"></div>
+          <div class="field"><label>Nb nouveaux clients</label><input id="a_nb_new" type="text" placeholder="4" oninput="refreshAll()"></div>
+        </div>
+        <div class="field-row three" style="margin-bottom:10px">
+          <div class="field"><label>CA généré total (€)</label><input id="a_ca" type="text" placeholder="1 760" oninput="refreshAll()"></div>
+          <div class="field"><label>Commission due (€)</label><input id="a_commission" type="text" placeholder="158" oninput="refreshAll()"></div>
+          <div class="field"><label>Forfait (€)</label><input id="a_forfait" type="text" placeholder="79" oninput="refreshAll()"></div>
+        </div>
+        <textarea class="msg-textarea" id="msg_a_recap" style="min-height:200px" oninput=""></textarea>
+        <div class="msg-note">À envoyer en fin de mois, avant d'envoyer la facture. Outil de transparence — un artisan qui comprend les chiffres ne conteste pas.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_a_recap', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('a_tel','msg_a_recap')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ONGLET MESSAGES FIXES ═════════════════════════════════════════════ -->
+  <div id="tab-fixe" class="tab-panel">
+
+    <div class="fields-bar">
+      <div class="fields-title">Destinataire</div>
+      <div class="field-row">
+        <div class="field"><label>Prénom artisan</label><input id="f_prenom" type="text" placeholder="Paul" oninput="refreshAll()"></div>
+        <div class="field"><label>Numéro WhatsApp</label><input id="f_tel" type="text" placeholder="06 XX XX XX XX" oninput="refreshAll()"></div>
+      </div>
+    </div>
+
+    <div class="msg-section-label">Transfert d'appel quotidien</div>
+
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-fixed">🌅</div>
+        <span class="msg-title">Activation du transfert — matin</span>
+        <span class="msg-badge badge-fixed">Fixe</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_f_matin" oninput=""></textarea>
+        <div class="msg-note">À envoyer avant 8h. L'artisan répond O ou N. Si pas de réponse dans 15 min, relancer.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_f_matin', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('f_tel','msg_f_matin')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-fixed">🌆</div>
+        <span class="msg-title">Désactivation du transfert — soir</span>
+        <span class="msg-badge badge-fixed">Fixe</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_f_soir" oninput=""></textarea>
+        <div class="msg-note">À envoyer vers 18h. L'artisan répond O ou N.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_f_soir', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('f_tel','msg_f_soir')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="msg-section-label">Onboarding artisan</div>
+
+    <div class="msg-card">
+      <div class="msg-header" onclick="toggle(this)">
+        <div class="msg-icon icon-fixed">👋</div>
+        <span class="msg-title">Message de bienvenue — premier jour</span>
+        <span class="msg-badge badge-fixed">Fixe</span>
+        <svg class="chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="msg-body">
+        <textarea class="msg-textarea" id="msg_f_bienvenue" oninput=""></textarea>
+        <div class="msg-note">À envoyer le matin du premier jour de collaboration, après signature du document d'engagement.</div>
+        <div class="msg-actions">
+          <button class="btn btn-copy" onclick="copyMsg('msg_f_bienvenue', this)">Copier</button>
+          <button class="btn btn-wa" onclick="sendWA('f_tel','msg_f_bienvenue')">Ouvrir WhatsApp</button>
+          <button class="btn btn-refresh" onclick="refreshAll()" title="Régénérer">↺</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast">Message copié</div>
+
+<script>
+// ── Getters ───────────────────────────────────────────────────────────────────
+function v(id){ const el=document.getElementById(id); return el ? el.value.trim() : ''; }
+
+// ── Génération des messages ───────────────────────────────────────────────────
+function generateMessages(){
+  const cp=v('c_prenom')||'[Prénom client]';
+  const cdate=v('c_date')||'[date]';
+  const cheure=v('c_heure')||'[heure]';
+  const cartisan=v('c_artisan')||'[Artisan]';
+  const ctype=v('c_type')||'[type d\'intervention]';
+  const cmontant=v('c_montant')||'[montant]';
+  const cavis=v('c_avis')||'[lien avis]';
+  const cmission=v('c_mission')||'[ID]';
+  const cretardheure=v('c_retard_heure')||'[heure]';
+
+  const ap=v('a_prenom')||'[Prénom artisan]';
+  const adate=v('a_date')||'[date]';
+  const aheure=v('a_heure')||'[heure]';
+  const aduree=v('a_duree')||'[durée]';
+  const aclient=v('a_client')||'[Nom client]';
+  const aclienttel=v('a_client_tel')||'[tél client]';
+  const aadresse=v('a_adresse')||'[adresse]';
+  const atype=v('a_type')||'[type d\'intervention]';
+  const atarif=v('a_tarif')||'[tarif]';
+  const aurgence=v('a_urgence')||'';
+  const amission=v('a_mission')||'[ID]';
+  const afourchette=v('a_fourchette')||'[X – Y]';
+  const amois=v('a_mois')||'[mois]';
+  const anbmissions=v('a_nb_missions')||'[X]';
+  const anbnew=v('a_nb_new')||'[X]';
+  const aca=v('a_ca')||'[X]';
+  const acommission=v('a_commission')||'[X]';
+  const aforfait=v('a_forfait')||'79';
+
+  const fp=v('f_prenom')||'[Prénom artisan]';
+
+  // ── MESSAGES CLIENT ────────────────────────────────────────────────────────
+  set('msg_c_rdv',
+`Bonjour ${cp} 👋
+
+Votre intervention est confirmée.
+
+📅 ${cdate} à ${cheure}
+🔧 ${ctype}
+👨‍🔧 Technicien : ${cartisan}
+
+Il vous appellera avant d'arriver si nécessaire. N'hésitez pas à me contacter si vous avez une question.
+
+À bientôt 🙏`);
+
+  set('msg_c_suivi',
+`Bonjour ${cp} 👋
+
+J'espère que l'intervention s'est bien passée 👍
+
+Je finalise le suivi de votre demande. J'ai noté un montant de ${cmontant} €, c'est bien correct ?
+
+Et si vous avez 30 secondes, votre retour est toujours utile :
+${cavis}
+
+Merci beaucoup 🙏`);
+
+  set('msg_c_rappel',
+`Bonjour ${cp} 👋
+
+Petit rappel — votre intervention est demain ${cdate} à ${cheure} avec ${cartisan}.
+
+Bonne soirée et à demain 🙂`);
+
+  set('msg_c_retard',
+`Bonjour ${cp},
+
+Je vous contacte pour vous informer que le technicien est légèrement retardé — il arrivera vers ${cretardheure} au lieu de ${cheure}.
+
+Je m'en excuse pour la gêne occasionnée. N'hésitez pas à me rappeler si besoin.`);
+
+  set('msg_c_annul',
+`Bonjour ${cp},
+
+Je vous contacte car le technicien prévu ce ${cdate} ne peut malheureusement pas intervenir — un imprévu sérieux s'est produit.
+
+Je suis vraiment désolé pour ce désagrément. Je vous propose de reprogrammer dès que possible — pouvez-vous me dire vos disponibilités cette semaine ?`);
+
+  // ── MESSAGES ARTISAN ───────────────────────────────────────────────────────
+  set('msg_a_mission',
+`👋 Bonjour ${ap},
+
+${aurgence}nouvelle mission disponible
+
+📅 ${adate} à ${aheure}
+⏱️ Durée estimée : ${aduree}
+🔧 ${atype}
+
+👤 Client : ${aclient}
+📞 ${aclienttel}
+📍 ${aadresse}
+
+💰 Tarif annoncé : ${atarif} €
+🆔 Réf. : ${amission}
+
+Merci de me confirmer par O (oui) ou N (non) dès que possible 🙏`);
+
+  set('msg_a_devis_valid',
+`Bonjour ${ap},
+
+J'ai une demande pour : ${atype}
+📍 ${aadresse}
+👤 ${aclient}
+
+Avant d'annoncer un tarif au client, est-ce que la fourchette de ${afourchette} € te semble correcte pour ce type d'intervention ?
+
+Confirme par O si ça te convient ou dis-moi ta fourchette 👍`);
+
+  set('msg_a_devis_site',
+`Bonjour ${ap},
+
+J'ai une demande qui nécessite une visite sur site pour établir un devis — trop complexe pour estimer par téléphone.
+
+🔧 ${atype}
+📍 ${aadresse}
+👤 ${aclient} — ${aclienttel}
+
+Tu peux passer faire un état des lieux ? La visite est gratuite et sans engagement côté client. Dis-moi si tu es disponible et quand.`);
+
+  set('msg_a_relance',
+`Bonjour ${ap},
+
+Je t'ai envoyé une mission il y a un moment (réf. ${amission}) — le client attend une confirmation de ma part.
+
+Tu peux me confirmer si tu prends ou non ? Sinon je dois trouver une autre solution rapidement 🙏`);
+
+  set('msg_a_prix',
+`Bonjour ${ap} 👋
+
+Mission ${amission} — ${atype} chez ${aclient} — c'est terminé ?
+
+Quel montant tu as facturé au client ? J'en ai besoin pour clôturer le dossier et faire le suivi. Merci 🙏`);
+
+  const totaldu = (parseFloat(acommission.replace(/\s/g,''))||0) + (parseFloat(aforfait.replace(/\s/g,''))||0);
+  set('msg_a_recap',
+`Bonjour ${ap} 👋
+
+Voici ton bilan pour ${amois} :
+
+📊 Missions reçues via le service : ${anbmissions}
+🆕 Dont nouveaux clients : ${anbnew}
+💶 CA généré : ${aca} €
+
+— — —
+💰 Commission (nouveaux clients) : ${acommission} €
+📋 Forfait mensuel : ${aforfait} €
+Total à régler : ${totaldu ? totaldu.toLocaleString('fr-FR') : '[total]'} €
+— — —
+
+La facture suit dans les prochains jours. Si tu as des questions sur un point, n'hésite pas 🙏
+
+Bonne fin de mois !`);
+
+  // ── MESSAGES FIXES ────────────────────────────────────────────────────────
+  set('msg_f_matin',
+`Bonjour ${fp} ☀️
+
+Pense à activer le transfert avant de partir en intervention :
+👉 Tape ##21*[numéro du service]# sur ton téléphone
+
+Bonne journée et bonnes interventions 💪
+→ Réponds O si c'est fait`);
+
+  set('msg_f_soir',
+`Bonsoir ${fp} 🌆
+
+Pense à désactiver le transfert :
+👉 Tape ##61# sur ton téléphone
+
+Bonne soirée 🙂
+→ Réponds O si c'est fait`);
+
+  set('msg_f_bienvenue',
+`Bonjour ${fp} 👋
+
+Bienvenue dans le service ! On démarre aujourd'hui.
+
+Voici les deux codes à retenir :
+✅ Activation matin : ##21*[numéro du service]#
+❌ Désactivation soir : ##61#
+
+Je t'enverrai un rappel chaque matin et chaque soir.
+
+Pour chaque mission, tu recevras un message avec toutes les infos — confirme par O ou N dans les 2h.
+
+Des questions ? N'hésite pas à m'écrire directement ici. Bonne première journée ! 💪`);
+}
+
+function set(id, txt){
+  const el=document.getElementById(id);
+  if(el) el.value=txt;
+}
+
+function refreshAll(){ generateMessages(); }
+
+// ── Copy ────────────────────────────────────────────────────────────────────
+function copyMsg(id, btn){
+  const txt=document.getElementById(id).value;
+  navigator.clipboard.writeText(txt).then(()=>{
+    btn.classList.add('done');
+    btn.textContent='Copié ✓';
+    setTimeout(()=>{btn.classList.remove('done');btn.textContent='Copier';},2000);
+    const t=document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2000);
+  });
+}
+
+// ── WhatsApp ────────────────────────────────────────────────────────────────
+function sendWA(telId, msgId){
+  const tel=document.getElementById(telId)?.value?.replace(/\s/g,'').replace(/^0/,'33');
+  const txt=document.getElementById(msgId)?.value||'';
+  const url='https://wa.me/'+(tel||'')+' ?text='+encodeURIComponent(txt);
+  window.open(url.replace(' ',''),'_blank');
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+function switchTab(id){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  const map={'client':0,'artisan':1,'fixe':2};
+  document.querySelectorAll('.tab')[map[id]].classList.add('active');
+}
+
+// ── Toggle accordéon ────────────────────────────────────────────────────────
+function toggle(header){
+  const body=header.nextElementSibling;
+  const chev=header.querySelector('.chevron');
+  body.classList.toggle('open');
+  chev.classList.toggle('open',body.classList.contains('open'));
+}
+
+// Init
+generateMessages();
+</script>
+</body>
+</html>
